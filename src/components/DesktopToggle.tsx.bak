@@ -1,0 +1,84 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export default function DesktopToggle() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const applyDesktopMode = (desktop: boolean) => {
+    const root = document.documentElement;
+    if (desktop && window.innerWidth > 768) {
+      root.style.setProperty('--app-max-width', '1200px');
+      root.style.setProperty('--app-border-radius', '24px');
+      root.style.setProperty('--app-margin', '24px auto');
+      root.style.setProperty('--app-min-height', 'calc(100vh - 48px)');
+      document.body.style.backgroundColor = '#0f172a';
+    } else {
+      root.style.setProperty('--app-max-width', '480px');
+      root.style.setProperty('--app-border-radius', '0px');
+      root.style.setProperty('--app-margin', '0 auto');
+      root.style.setProperty('--app-min-height', '100vh');
+      document.body.style.backgroundColor = '';
+    }
+  };
+
+  useEffect(() => {
+    setMounted(true);
+    const storedPref = localStorage.getItem('desktop-mode');
+    if (storedPref === 'true') {
+      setIsDesktop(true);
+      applyDesktopMode(true);
+    }
+    
+    // Handle resize events to ensure mobile screens always get mobile view
+    const handleResize = () => {
+      const isLargeScreen = window.innerWidth > 768;
+      applyDesktopMode(isLargeScreen && localStorage.getItem('desktop-mode') === 'true');
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const toggleDesktop = () => {
+    const newMode = !isDesktop;
+    localStorage.setItem('desktop-mode', String(newMode));
+    setIsDesktop(newMode);
+    applyDesktopMode(newMode);
+  };
+
+  // Prevent hydration mismatch by not rendering anything until mounted
+  if (!mounted) return null;
+
+  return (
+    <button
+      onClick={toggleDesktop}
+      className="btn btn-secondary hide-on-mobile"
+      style={{
+        position: 'absolute',
+        top: '24px',
+        right: '24px',
+        padding: '6px 12px',
+        fontSize: '0.8rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        zIndex: 50
+      }}
+      title={isDesktop ? "Switch to Mobile View" : "Switch to Desktop View"}
+    >
+      {isDesktop ? (
+        <>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          <span>Mobile View</span>
+        </>
+      ) : (
+        <>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Desktop View</span>
+        </>
+      )}
+    </button>
+  );
+}

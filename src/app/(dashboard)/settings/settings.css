@@ -1,0 +1,83 @@
+.settings-container {
+  padding: 0;
+  max-width: 1000px;
+}
+
+.settings-page-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+.settings-nav-sidebar {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.settings-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: #475569;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.settings-nav-item:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.settings-nav-item.active {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.settings-nav-item .icon {
+  font-size: 1.1rem;
+}
+
+.settings-content-area {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  min-height: 400px;
+}
+
+@media (max-width: 768px) {
+  .settings-page-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .settings-content-area {
+    padding: 16px;
+  }
+
+  /* Make forms stack automatically */
+  form[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Reset grid layouts in settings clients that were hardcoded */
+  .settings-content-area > div > div[style*="grid-template-columns"],
+  .settings-content-area form > div[style*="grid-template-columns"] {
+    grid-template-columns: 1fr !important;
+  }
+}

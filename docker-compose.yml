@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  tms-app:
+    build: .
+    image: tms:latest
+    container_name: tms-nextjs
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Map the entire data directory so SQLite can create WAL files alongside the DB
+      - ./data:/app/data
+      # Map the uploads directory to ensure uploaded images persist
+      - ./data/uploads:/app/public/uploads
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SQLITE_FILE=/app/data/sqlite.db

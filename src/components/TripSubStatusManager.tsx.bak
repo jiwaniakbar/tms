@@ -1,0 +1,76 @@
+'use client';
+
+import { createTripSubStatus, deleteTripSubStatus } from '@/app/actions';
+import { TripSubStatus } from '@/lib/db';
+
+export default function TripSubStatusManager({ statuses }: { statuses: TripSubStatus[] }) {
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+
+      <form action={createTripSubStatus} className="glass-card animate-in">
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '20px' }}>
+          Add Custom Trip Progress Status
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div className="input-group">
+            <label className="input-label" htmlFor="name">Progress Name</label>
+            <input className="input-field" type="text" id="name" name="name" required placeholder="e.g. Delayed at border" />
+          </div>
+
+          <div className="input-group">
+            <label className="input-label" htmlFor="linked_status">Link to Core System Status</label>
+            <select className="input-field" id="linked_status" name="linked_status" required defaultValue="Active">
+              <option value="Planned">Planned</option>
+              <option value="Active">Active</option>
+              <option value="Completed">Completed</option>
+              <option value="Breakdown">Breakdown</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label" htmlFor="sort_order">Sort Order (Lower appears first)</label>
+            <input className="input-field" type="number" id="sort_order" name="sort_order" defaultValue="100" />
+          </div>
+
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '10px' }}>
+            + Add Progress Link
+          </button>
+        </div>
+      </form>
+
+      <div className="glass-card animate-in" style={{ animationDelay: '0.1s' }}>
+        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '20px' }}>
+          Configured Progress Statuses
+        </h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {statuses.map((status) => (
+            <div key={status.id} style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '12px',
+              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              borderRadius: '8px'
+            }}>
+              <div>
+                <strong style={{ display: 'block' }}>{status.name}</strong>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                  Linked to: {status.linked_status} (Order: {status.sort_order})
+                </span>
+              </div>
+              <form action={deleteTripSubStatus.bind(null, status.id)}>
+                <button type="submit" className="btn-icon" style={{ padding: '8px', color: '#ef4444' }} title="Delete">
+                  ✕
+                </button>
+              </form>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
