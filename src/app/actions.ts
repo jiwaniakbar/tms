@@ -38,17 +38,18 @@ export async function createProfile(formData: FormData) {
   const bio = formData.get('bio') as string;
   const photo = formData.get('photo') as File | null;
   const is_driver = formData.get('is_driver') ? 1 : 0;
+  const alternate_phone = formData.get('alternate_phone') as string;
 
   const age = calculateAge(dob);
   const photo_url = await savePhoto(photo);
 
   const stmt = getDb().prepare(`
-    INSERT INTO profiles (name, email, phone, dob, age, bio, photo_url, is_driver)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO profiles (name, email, phone, dob, age, bio, photo_url, is_driver, alternate_phone)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   try {
-    stmt.run(name, email || null, phone, dob || null, age, bio || null, photo_url || null, is_driver);
+    stmt.run(name, email || null, phone, dob || null, age, bio || null, photo_url || null, is_driver, alternate_phone || null);
   } catch (err: any) {
     if (err.message.includes('UNIQUE constraint failed')) {
       throw new Error('Email already exists');
@@ -60,34 +61,34 @@ export async function createProfile(formData: FormData) {
   redirect('/');
 }
 
-export async function createQuickProfile(name: string, phone: string): Promise<{ success: boolean; id?: number; error?: string; phone?: string }> {
+export async function createQuickProfile(name: string, phone: string, alternate_phone?: string): Promise<{ success: boolean; id?: number; error?: string; phone?: string; alternate_phone?: string }> {
   try {
     const stmt = getDb().prepare(`
-      INSERT INTO profiles (name, phone)
-      VALUES (?, ?)
+      INSERT INTO profiles (name, phone, alternate_phone)
+      VALUES (?, ?, ?)
     `);
-    const result = stmt.run(name, phone);
+    const result = stmt.run(name, phone, alternate_phone || null);
 
     // Invalidate everything so the SearchableSelects pick up the new option
     revalidatePath('/trips/create');
     revalidatePath('/trips/[id]/edit', 'page');
     revalidatePath('/trips');
 
-    return { success: true, id: Number(result.lastInsertRowid), phone };
+    return { success: true, id: Number(result.lastInsertRowid), phone, alternate_phone };
   } catch (err: any) {
     console.error("Delete trip error", err);
     return { success: false, error: err.message };
   }
 }
 
-export async function updateQuickProfile(id: number, name: string, phone: string): Promise<{ success: boolean; error?: string }> {
+export async function updateQuickProfile(id: number, name: string, phone: string, alternate_phone?: string): Promise<{ success: boolean; error?: string }> {
   try {
     const stmt = getDb().prepare(`
       UPDATE profiles
-      SET name = ?, phone = ?
+      SET name = ?, phone = ?, alternate_phone = ?
       WHERE id = ?
     `);
-    stmt.run(name, phone, id);
+    stmt.run(name, phone, alternate_phone || null, id);
 
     // Invalidate everything so the SearchableSelects pick up the edited option
     revalidatePath('/trips/create');
@@ -108,6 +109,7 @@ export async function updateProfile(id: number, formData: FormData) {
   const bio = formData.get('bio') as string;
   const photo = formData.get('photo') as File | null;
   const is_driver = formData.get('is_driver') ? 1 : 0;
+  const alternate_phone = formData.get('alternate_phone') as string;
 
   const role = formData.get('role') as string;
   const password = formData.get('password') as string;
@@ -127,7 +129,8 @@ export async function updateProfile(id: number, formData: FormData) {
     'dob = @dob',
     'age = @age',
     'bio = @bio',
-    'is_driver = @is_driver'
+    'is_driver = @is_driver',
+    'alternate_phone = @alternate_phone'
   ];
 
   const params: any = {
@@ -138,6 +141,7 @@ export async function updateProfile(id: number, formData: FormData) {
     age,
     bio: bio || null,
     is_driver,
+    alternate_phone: alternate_phone || null,
     id
   };
 
@@ -834,7 +838,8 @@ export async function quickUpdateTripDetails(
   driver_id: number | null, 
   vehicle_registration: string, 
   passengers: number, 
-  wheelchairs: number
+  wheelchairs: number,
+  notes?: string
 ) {
   // Try to find the vehicle by registration or create it
   let vehicle_id = null;
@@ -851,10 +856,10 @@ export async function quickUpdateTripDetails(
 
   const stmt = getDb().prepare(`
     UPDATE trips 
-    SET volunteer_id = ?, driver_id = ?, vehicle_id = ?, passengers_boarded = ?, wheelchairs_boarded = ?
+    SET volunteer_id = ?, driver_id = ?, vehicle_id = ?, passengers_boarded = ?, wheelchairs_boarded = ?, notes = ?
     WHERE id = ?
   `);
-  stmt.run(volunteer_id, driver_id, vehicle_id, passengers, wheelchairs, id);
+  stmt.run(volunteer_id, driver_id, vehicle_id, passengers, wheelchairs, notes || '', id);
 
   revalidatePath('/my-location-trips');
   revalidatePath('/trips');

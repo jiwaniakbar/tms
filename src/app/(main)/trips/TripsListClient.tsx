@@ -164,12 +164,13 @@ export default function TripsListClient({
                   <th onClick={() => handleSort('origin')} style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}>ORIGIN {getSortIcon('origin')}</th>
                   <th onClick={() => handleSort('destination')} style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}>DESTINATION {getSortIcon('destination')}</th>
                   <th onClick={() => handleSort('vehicle_registration')} style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none' }}>ASSIGNMENTS {getSortIcon('vehicle_registration')}</th>
+                  <th style={{ padding: '16px', fontWeight: 600, color: '#475569', fontSize: '0.9rem', whiteSpace: 'nowrap', userSelect: 'none' }}>NOTES</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedTrips.length === 0 && (
                   <tr>
-                    <td colSpan={6} style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>No trips found matching your current filters.</td>
+                    <td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#64748b' }}>No trips found matching your current filters.</td>
                   </tr>
                 )}
                 {sortedTrips.map(trip => {
@@ -206,6 +207,15 @@ export default function TripsListClient({
                         <div style={{ display: 'flex', gap: '8px' }}>
                           <span style={{ fontSize: '0.8rem', backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '4px', color: '#334155' }}>Bus Incharge: {trip.volunteer_name || '-'} {trip.volunteer_phone ? '(' + trip.volunteer_phone + ')' : ''}</span>
                         </div>
+                      </td>
+                      <td data-label="Notes" style={{ padding: '16px', maxWidth: '150px' }}>
+                        {trip.notes ? (
+                          <div title={trip.notes} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#64748b', fontStyle: 'italic', fontSize: '0.85rem' }}>
+                            {trip.notes}
+                          </div>
+                        ) : (
+                          <span style={{ color: '#cbd5e1' }}>-</span>
+                        )}
                       </td>
                       <td data-label="Actions" style={{ padding: '16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

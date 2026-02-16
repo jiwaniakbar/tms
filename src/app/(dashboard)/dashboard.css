@@ -77,6 +77,41 @@
   border-top: 1px solid rgba(255,255,255,0.1);
 }
 
+/* Visibility Logic: Desktop Header vs Sidebar Footer */
+.desktop-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+@media (min-width: 1025px) {
+
+  /* On Desktop: Hide Sidebar Footer, Show Desktop Header */
+  .sidebar-footer {
+    display: none;
+  }
+
+  .desktop-header {
+    display: flex;
+  }
+}
+
+@media (max-width: 1024px) {
+
+  /* On Mobile: Show Sidebar Footer, Hide Desktop Header */
+  .desktop-header {
+    display: none;
+  }
+
+  .sidebar-footer {
+    display: block;
+    /* or flex? it was block/flex before */
+  }
+}
 /* Main Content Area */
 .dashboard-main {
   flex: 1;
@@ -265,12 +300,44 @@
   border-radius: 6px;
   font-size: 0.95rem;
   color: #334155;
-  background-color: #f8fafc;
+  background-color: white;
+    /* Changed from #f8fafc */
   outline: none;
 }
 .filter-select:focus {
   border-color: #3b82f6;
   background-color: white;
+}
+.filter-select:disabled {
+  background-color: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Global input field style used in forms */
+.input-field {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #334155;
+  background-color: white;
+  /* Changed from #f8fafc */
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-field:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.input-field:disabled {
+  background-color: #f1f5f9;
+  /* Explicit disabled bg */
+  color: #94a3b8;
+  cursor: not-allowed;
 }
 
 /* List/Map Toggle */
@@ -344,6 +411,10 @@
 .badge-status.bg-completed { background-color: #10b981; color: white; }
 .badge-status.bg-arriving { background-color: #8b5cf6; color: white; }
 .badge-status.bg-active { background-color: #1e293b; color: white; }
+.badge-status.bg-cancelled {
+  background-color: #ef4444;
+  color: white;
+}
 
 .trip-item-capacity {
   font-weight: 600;

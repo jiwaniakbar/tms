@@ -60,7 +60,7 @@ export default function LoginForm() {
 
       <div>
         <label htmlFor="password" style={{ display: 'block', color: '#cbd5e1', fontSize: '0.85rem', marginBottom: '8px', fontWeight: 500 }}>
-          Master Password
+          Password
         </label>
         <input
           id="password"

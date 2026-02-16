@@ -57,6 +57,15 @@ export default function DashboardLayoutClient({ children, role, permissions }: {
       </aside>
       
       <main className="dashboard-main">
+        {/* Desktop Header for Logout/Role */}
+        <div className="desktop-header">
+          <div className="role-badge" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#64748b' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontWeight: 600 }}>{role.charAt(0)}</div>
+            <span className="role-text" style={{ fontWeight: 500 }}>{role}</span>
+          </div>
+          <LogoutButton />
+        </div>
+
         <div className="dashboard-content">
           {children}
         </div>

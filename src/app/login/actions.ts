@@ -17,6 +17,7 @@ export async function authenticate(prevState: any, formData: FormData) {
   }
 
   let sessionToken = null;
+  let userRole = null;
 
   try {
     const db = getDb();
@@ -58,6 +59,7 @@ export async function authenticate(prevState: any, formData: FormData) {
     };
     
     sessionToken = await encrypt(payload);
+    userRole = user.role;
 
   } catch (error: any) {
     console.error('Login Error:', error?.message || error);
@@ -74,7 +76,24 @@ export async function authenticate(prevState: any, formData: FormData) {
       maxAge: 60 * 60 * 24 // 1 day
     });
     
-    redirect('/dashboard');
+    // Redirect based on role
+    // SUPER_ADMIN / COMMAND_CENTER -> /dashboard
+    // REGION_ADMIN -> /manage-trips
+    // BUS_INCHARGE / VOLUNTEER -> /my-location-trips
+    switch (userRole) {
+      case 'REGION_ADMIN':
+        redirect('/manage-trips');
+        break;
+      case 'BUS_INCHARGE':
+      case 'VOLUNTEER':
+        redirect('/my-location-trips');
+        break;
+      case 'SUPER_ADMIN':
+      case 'COMMAND_CENTER':
+      default:
+        redirect('/dashboard');
+        break;
+    }
   }
 
   return 'Unknown error during token generation';

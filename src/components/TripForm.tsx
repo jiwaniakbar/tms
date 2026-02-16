@@ -497,6 +497,20 @@ isReadOnly?: boolean
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #f1f5f9' }}>
+
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label className="input-label" htmlFor="notes">📝 Trip Notes / Remarks</label>
+              <textarea
+                className="input-field"
+                id="notes"
+                name="notes"
+                rows={3}
+                defaultValue={trip?.notes || ''}
+                placeholder="Add any extra details, passenger requirements, or instructions..."
+                style={{ minHeight: '80px', resize: 'vertical' }}
+              />
+            </div>
+
           <h4 style={{ margin: 0, fontSize: '0.95rem', color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Assignments</h4>
           <div className="input-group" style={{ marginBottom: 0 }}>
             <SearchableSelect 
@@ -534,18 +548,7 @@ isReadOnly?: boolean
             </div>
           </div>
           </div>
-          <div className="input-group" style={{ marginBottom: 0, marginTop: '16px' }}>
-            <label className="input-label" htmlFor="notes">📝 Trip Notes / Remarks</label>
-            <textarea
-              className="input-field"
-              id="notes"
-              name="notes"
-              rows={3}
-              defaultValue={trip?.notes || ''}
-              placeholder="Add any extra details, passenger requirements, or instructions..."
-              style={{ minHeight: '80px', resize: 'vertical' }}
-            />
-        </div>
+
       </div>
 
       {/* Error Message Space */}

@@ -9,7 +9,7 @@ interface QuickPersonModalProps {
   onSuccess: (id: number, name: string, phone: string, mode: 'add' | 'edit') => void;
   defaultName?: string;
   mode?: 'add' | 'edit';
-  initialData?: { id: number; name: string; phone: string };
+  initialData?: { id: number; name: string; phone: string; alternate_phone?: string };
 }
 
 export default function QuickPersonModal({
@@ -22,6 +22,7 @@ export default function QuickPersonModal({
 }: QuickPersonModalProps) {
   const [name, setName] = useState(defaultName);
   const [phone, setPhone] = useState('');
+  const [alternatePhone, setAlternatePhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -30,9 +31,11 @@ export default function QuickPersonModal({
       if (mode === 'edit' && initialData) {
         setName(initialData.name);
         setPhone(initialData.phone || '');
+        setAlternatePhone(initialData.alternate_phone || '');
       } else {
         setName(defaultName);
         setPhone('');
+        setAlternatePhone('');
       }
       setError('');
     }
@@ -52,14 +55,14 @@ export default function QuickPersonModal({
 
     try {
       if (mode === 'edit' && initialData) {
-        const result = await updateQuickProfile(initialData.id, name, phone);
+        const result = await updateQuickProfile(initialData.id, name, phone, alternatePhone);
         if (result.success) {
           onSuccess(initialData.id, name, phone, 'edit');
         } else {
           setError(result.error || 'Failed to update person');
         }
       } else {
-        const result = await createQuickProfile(name, phone);
+        const result = await createQuickProfile(name, phone, alternatePhone);
         if (result.success && result.id) {
           onSuccess(result.id, name, phone, 'add');
         } else {
@@ -100,7 +103,7 @@ export default function QuickPersonModal({
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="input-group">
-            <label className="input-label" htmlFor="quick_name">Full Name</label>
+            <label className="input-label" htmlFor="quick_name" style={{ color: '#e2e8f0' }}>Full Name</label>
             <input
               className="input-field"
               type="text"
@@ -112,14 +115,36 @@ export default function QuickPersonModal({
           </div>
 
           <div className="input-group">
-            <label className="input-label" htmlFor="quick_phone">Phone Number</label>
+            <label className="input-label" htmlFor="quick_phone" style={{ color: '#e2e8f0' }}>Phone Number</label>
             <input
               className="input-field"
               type="tel"
               id="quick_phone"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 234 567 890"
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                setPhone(val);
+              }}
+              placeholder="9876543210"
+              maxLength={10}
+              pattern="[0-9]{10}"
+            />
+          </div>
+
+          <div className="input-group">
+            <label className="input-label" htmlFor="quick_alternate_phone" style={{ color: '#e2e8f0' }}>Alternate Phone (Optional)</label>
+            <input
+              className="input-field"
+              type="tel"
+              id="quick_alternate_phone"
+              value={alternatePhone}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
+                setAlternatePhone(val);
+              }}
+              placeholder="9876543210"
+              maxLength={10}
+              pattern="[0-9]{10}"
             />
           </div>
 

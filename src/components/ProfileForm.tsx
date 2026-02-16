@@ -84,7 +84,36 @@ export default function ProfileForm({ profile, currentUserRole }: { profile?: an
 
       <div className="input-group">
         <label className="input-label" htmlFor="phone">Phone Number</label>
-        <input className="input-field" type="tel" id="phone" name="phone" defaultValue={profile?.phone} placeholder="+1 (555) 000-0000" />
+        <input
+          className="input-field"
+          type="tel"
+          id="phone"
+          name="phone"
+          defaultValue={profile?.phone}
+          placeholder="9876543210"
+          maxLength={10}
+          pattern="[0-9]{10}"
+          onInput={(e) => {
+            e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10);
+          }}
+        />
+      </div>
+
+      <div className="input-group">
+        <label className="input-label" htmlFor="alternate_phone">Alternate Phone Number <span style={{ opacity: 0.5, fontSize: '0.8em' }}>(Optional)</span></label>
+        <input
+          className="input-field"
+          type="tel"
+          id="alternate_phone"
+          name="alternate_phone"
+          defaultValue={profile?.alternate_phone}
+          placeholder="9876543210"
+          maxLength={10}
+          pattern="[0-9]{10}"
+          onInput={(e) => {
+            e.currentTarget.value = e.currentTarget.value.replace(/[^0-9]/g, '').slice(0, 10);
+          }}
+        />
       </div>
 
       <div className="input-group">

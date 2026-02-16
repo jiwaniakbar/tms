@@ -136,8 +136,24 @@ export default function DashboardTripRow({ trip, onRowClick }: { trip: any, onRo
         </div>
       </div>
 
+      {/* 7. Truncated Notes (Collapsed View) */}
+      {trip.notes && !expanded && (
+        <div style={{ padding: '0 16px 8px 52px', fontSize: '0.8rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px', gridColumn: '1 / -1' }}>
+          <span>📝</span>
+          <span style={{ fontStyle: 'italic', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
+            {trip.notes}
+          </span>
+        </div>
+      )}
+
       {expanded && (
         <div className="trip-item-details" style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', backgroundColor: '#f8fafc', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '0.9rem' }}>
+          {trip.notes && (
+            <div style={{ gridColumn: '1 / -1', marginBottom: '8px' }}>
+              <div style={{ color: '#64748b', marginBottom: '4px', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Notes</div>
+              <div style={{ fontStyle: 'italic', padding: '8px', background: 'white', borderRadius: '6px', border: '1px solid #e2e8f0' }}>{trip.notes}</div>
+            </div>
+          )}
           <div>
             <div style={{ color: '#64748b', marginBottom: '4px', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Vehicle Details</div>
             <div><strong>Registration:</strong> {trip.vehicle_registration || 'Unassigned'}</div>

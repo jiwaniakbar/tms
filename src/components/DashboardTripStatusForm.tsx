@@ -26,6 +26,7 @@ export default function DashboardTripStatusForm({
   const [status, setStatus] = useState(trip.status);
   const [subStatus, setSubStatus] = useState(trip.sub_status || '');
   const [breakdownIssue, setBreakdownIssue] = useState(trip.breakdown_issue || '');
+  const [notes, setNotes] = useState(trip.notes || '');
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [volunteerId, setVolunteerId] = useState<number | null>(trip.volunteer_id);
@@ -47,8 +48,8 @@ export default function DashboardTripStatusForm({
   const [wheelchairs, setWheelchairs] = useState(trip.wheelchairs_boarded || 0);
 
   // Prepare options for SearchableSelect
-  const volunteerOptions = volunteers.map(v => ({ id: v.id, name: v.name, phone: v.phone }));
-  const driverOptions = drivers.map(d => ({ id: d.id, name: d.name, phone: d.phone }));
+  const volunteerOptions = volunteers.map(v => ({ id: v.id, name: v.name, phone: v.phone, alternate_phone: v.alternate_phone }));
+  const driverOptions = drivers.map(d => ({ id: d.id, name: d.name, phone: d.phone, alternate_phone: d.alternate_phone }));
   // Vehicle options needs name property
   const vehicleOptions = vehicles.map(v => ({ id: v.id, name: v.registration, phone: v.make_model }));
 
@@ -72,7 +73,7 @@ export default function DashboardTripStatusForm({
       }
 
       await updateTripProgress(trip.id, status, subStatus, breakdownIssue);
-      await quickUpdateTripDetails(trip.id, volunteerId, driverId, finalReg, passengers, wheelchairs);
+      await quickUpdateTripDetails(trip.id, volunteerId, driverId, finalReg, passengers, wheelchairs, notes);
       if (onSuccess) onSuccess();
     } catch (err) {
       alert("Failed to update trip progress and details");
@@ -84,7 +85,43 @@ export default function DashboardTripStatusForm({
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
+      
       {/* Inline Trip Editor */}
+      
+      {/* Notes Field (Moved Above Assignments) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <h4 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-primary)' }}>Trip Notes / Remarks</h4>
+        {hasEditPermission ? (
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add notes about this trip..."
+            rows={2}
+            style={{
+              width: '100%',
+              padding: '10px',
+              borderRadius: '6px',
+              border: '1px solid #cbd5e1',
+              backgroundColor: 'white',
+              fontFamily: 'inherit',
+              resize: 'vertical'
+            }}
+          />
+        ) : (
+          <div style={{ 
+            padding: '10px', 
+            borderRadius: '6px', 
+            border: '1px solid #e2e8f0', 
+            backgroundColor: '#f8fafc',
+            color: notes ? 'var(--text-primary)' : 'var(--text-secondary)',
+            fontStyle: notes ? 'normal' : 'italic',
+            whiteSpace: 'pre-wrap'
+          }}>
+            {notes || 'No notes added.'}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', alignItems: 'end' }}>
         
         {/* Assignees */}

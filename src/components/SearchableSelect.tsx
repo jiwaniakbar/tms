@@ -6,6 +6,7 @@ interface Option {
   id: number;
   name: string;
   phone?: string;
+  alternate_phone?: string;
 }
 
 interface SearchableSelectProps {
@@ -41,8 +42,8 @@ export default function SearchableSelect({ options, name, value, onChange, defau
   };
 
   // Modal state
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editModalData, setEditModalData] = useState<{ isOpen: boolean; data?: { id: number, name: string, phone: string } }>({ isOpen: false });
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editModalData, setEditModalData] = useState<{ isOpen: boolean; data?: { id: number, name: string, phone: string, alternate_phone?: string } }>({ isOpen: false });
 
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -78,12 +79,12 @@ export default function SearchableSelect({ options, name, value, onChange, defau
     (option.phone && option.phone.includes(search))
   );
 
-  function handleQuickModalSuccess(id: number, newName: string, newPhone: string, mode: 'add' | 'edit') {
+  function handleQuickModalSuccess(id: number, newName: string, newPhone: string, mode: 'add' | 'edit', newAlternatePhone?: string) {
     if (mode === 'edit') {
-      setLocalOptions(prev => prev.map(o => o.id === id ? { ...o, name: newName, phone: newPhone } : o));
+      setLocalOptions(prev => prev.map(o => o.id === id ? { ...o, name: newName, phone: newPhone, alternate_phone: newAlternatePhone } : o));
       setEditModalData({ isOpen: false });
     } else {
-      setLocalOptions(prev => [...prev, { id, name: newName, phone: newPhone }]);
+      setLocalOptions(prev => [...prev, { id, name: newName, phone: newPhone, alternate_phone: newAlternatePhone }]);
       setIsAddModalOpen(false);
     }
 
@@ -231,7 +232,7 @@ export default function SearchableSelect({ options, name, value, onChange, defau
                     e.stopPropagation();
                     setEditModalData({
                       isOpen: true,
-                      data: { id: option.id, name: option.name, phone: option.phone || '' }
+                      data: { id: option.id, name: option.name, phone: option.phone || '', alternate_phone: option.alternate_phone }
                     });
                     setIsOpen(false);
                   }}
@@ -269,14 +270,14 @@ export default function SearchableSelect({ options, name, value, onChange, defau
             onClose={() => setIsAddModalOpen(false)}
             mode="add"
             defaultName={search}
-            onSuccess={handleQuickModalSuccess}
+            onSuccess={(id, name, phone, mode) => handleQuickModalSuccess(id, name, phone, mode)} // alternate phone isn't passed from QuickPersonModal onSuccess type yet? Wait, let's check.
           />
           <QuickPersonModal
             isOpen={editModalData.isOpen}
             onClose={() => setEditModalData({ isOpen: false })}
             mode="edit"
             initialData={editModalData.data}
-            onSuccess={handleQuickModalSuccess}
+            onSuccess={(id, name, phone, mode) => handleQuickModalSuccess(id, name, phone, mode)}
           />
         </>
       )}

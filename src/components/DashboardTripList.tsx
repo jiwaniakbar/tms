@@ -179,6 +179,12 @@ export default function DashboardTripList({
                           <span>🙋 {trip.volunteer_name || 'No Incharge'}</span>
                           <span>•</span>
                           <span>👥 {trip.passengers_boarded || 0} pax</span>
+                          {trip.notes && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              <span style={{ fontSize: '0.9rem' }}>📝</span>
+                              <span style={{ fontStyle: 'italic', color: 'var(--text-secondary)' }}>{trip.notes}</span>
+                            </span>
+                          )}
                           <span style={{ marginLeft: 'auto', color: 'var(--accent)', fontSize: '0.7rem' }}>Click to Expand ▼</span>
                         </div>
                       )}

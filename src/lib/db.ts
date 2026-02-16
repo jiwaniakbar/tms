@@ -82,6 +82,7 @@ export interface Profile {
   bio: string;
   photo_url?: string;
   is_driver: number; // 0 for No, 1 for Yes
+  alternate_phone?: string;
   location_id: number | null;
   created_at: string;
 }
@@ -196,8 +197,14 @@ export function initDb(db: Database.Database) {
   }
 
   try {
-    db.exec('ALTER TABLE profiles ADD COLUMN is_driver INTEGER DEFAULT 0');
     console.log('Added is_driver column to profiles table.');
+  } catch (err) {
+    // Column likely already exists
+  }
+
+  try {
+    db.exec('ALTER TABLE profiles ADD COLUMN alternate_phone TEXT');
+    console.log('Added alternate_phone column to profiles table.');
   } catch (err) {
     // Column likely already exists
   }
