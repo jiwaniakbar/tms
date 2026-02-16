@@ -1,10 +1,7 @@
 import { getSession } from '@/lib/auth';
 import { notFound } from 'next/navigation';
 import UserManagementClient from './UserManagementClient';
-import Database from 'better-sqlite3';
-import { getLocations } from '@/app/actions';
-import path from 'path';
-import { User, Region, Location } from '@/lib/db';
+import { User, Region, Location, getDb } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +12,7 @@ export default async function UsersPage() {
     return notFound();
   }
 
-  const dbPath = path.join(process.cwd(), 'sqlite.db');
-  const db = new Database(dbPath);
+  const db = getDb();
   
   const users = db.prepare(`
     SELECT u.id, u.name, u.email, u.role, u.role_id, u.region_id, u.location_id, u.created_at, r.name as region_name, 
@@ -33,7 +29,7 @@ export default async function UsersPage() {
   // getLocations strips venue_id, so we query directly here
   const locations = db.prepare('SELECT id, name, region_id, venue_id FROM locations').all() as Location[];
   
-  db.close();
+  // db.close(); // Database is a singleton now, do not close
 
   return (
     <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -48,3 +44,4 @@ export default async function UsersPage() {
     </div>
   );
 }
+

@@ -1,8 +1,6 @@
 import { getSession } from '@/lib/auth';
 import { notFound } from 'next/navigation';
-import Database from 'better-sqlite3';
-import path from 'path';
-import { Region, Venue, Location } from '@/lib/db';
+import { Region, Venue, Location, getDb } from '@/lib/db';
 import HierarchyManagerClient from './HierarchyManagerClient';
 
 export const dynamic = 'force-dynamic';
@@ -14,8 +12,7 @@ export default async function HierarchyPage() {
     return notFound();
   }
 
-  const dbPath = path.join(process.cwd(), 'sqlite.db');
-  const db = new Database(dbPath);
+  const db = getDb();
   
   let regionsStmt = 'SELECT * FROM regions ORDER BY id ASC';
   let venuesStmt = 'SELECT * FROM venues ORDER BY id ASC';
@@ -32,7 +29,7 @@ export default async function HierarchyPage() {
   const venues = db.prepare(venuesStmt).all() as Venue[];
   const locations = db.prepare(locationsStmt).all() as Location[];
   
-  db.close();
+  // db.close(); // Database is a singleton now, do not close
 
   return (
     <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto' }}>
@@ -51,3 +48,4 @@ export default async function HierarchyPage() {
     </div>
   );
 }
+

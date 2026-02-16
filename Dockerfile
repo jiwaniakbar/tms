@@ -12,6 +12,8 @@ WORKDIR /app
 # Avoid copying lockfile to force fresh resolution for container architecture
 COPY package.json ./
 RUN npm install
+# Install sharp for image optimization
+RUN npm install sharp
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -68,3 +70,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
+

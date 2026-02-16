@@ -116,8 +116,12 @@ function CoreStatusBlock({ core, subStatuses }: { core: TripStatus, subStatuses:
           <div style={{ padding: '12px 16px', backgroundColor: '#f8fafc' }}>
             <form action={async (formData) => {
               formData.append('linked_status', core.name);
-              await createTripSubStatus(formData);
-              setIsAddingSub(false);
+              const res = await createTripSubStatus(formData);
+              if (res?.error) {
+                alert(res.error);
+              } else {
+                setIsAddingSub(false);
+              }
             }} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input type="text" name="name" placeholder="New sub-status name" required style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
               <input type="number" name="sort_order" defaultValue={(mySubs[mySubs.length-1]?.sort_order || 0) + 10} style={{ width: '80px', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} placeholder="Sort" />
@@ -201,3 +205,4 @@ export default function TripWorkflowManager({ coreStatuses, subStatuses }: { cor
     </div>
   );
 }
+
