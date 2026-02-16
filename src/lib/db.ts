@@ -17,6 +17,7 @@ export function getDb(): Database.Database {
   try {
     dbInstance = new Database(dbPath);
     dbInstance.pragma('journal_mode = WAL');
+    dbInstance.pragma('synchronous = NORMAL'); // Faster WAL writes, safe for most use cases
     console.log('Database opened successfully.');
 
     // Initialize schema on first connection
@@ -102,6 +103,9 @@ export interface Trip {
   route_code: string;
   origin_id: number | null;
   destination_id: number | null;
+  origin_venue_id: number | null;
+  destination_venue_id: number | null;
+  region_id: number | null;
   start_time: string;
   end_time: string;
   vehicle_id: number | null;
@@ -124,11 +128,27 @@ export interface TripStatus {
 }
 
 // Define Trip Sub-Status Type
+// Define Trip Sub-Status Type
 export interface TripSubStatus {
   id: number;
   name: string;
   linked_status: string; // The core status it maps to (e.g., Active)
   sort_order: number;
+}
+
+export interface Role {
+  id: number;
+  name: string;
+  description: string;
+  is_system_role: number;
+}
+
+export interface RolePermission {
+  id: number;
+  role_id: number;
+  module_code: string;
+  can_view: number;
+  can_edit: number;
 }
 
 // Database initialization function
@@ -207,6 +227,7 @@ export function initDb(db: Database.Database) {
       vehicle_id INTEGER,
       volunteer_id INTEGER,
       driver_id INTEGER,
+      region_id INTEGER,
       status TEXT NOT NULL DEFAULT 'Planned',
       sub_status TEXT NOT NULL DEFAULT 'Scheduled',
       breakdown_issue TEXT,
@@ -242,6 +263,13 @@ export function initDb(db: Database.Database) {
     // Column likely already exists
   }
 
+  try {
+    db.exec('ALTER TABLE trips ADD COLUMN region_id INTEGER REFERENCES regions(id)');
+    console.log('Added region_id column to trips table.');
+  } catch (err) {
+    // Column likely already exists
+  }
+
   const createTripStatusHistoryTableQuery = `
     CREATE TABLE IF NOT EXISTS trip_status_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -267,6 +295,17 @@ export function initDb(db: Database.Database) {
   `;
   db.exec(createRegionsTableQuery);
 
+  const createEventsTableQuery = `
+    CREATE TABLE IF NOT EXISTS events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      region_id INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (region_id) REFERENCES regions (id)
+    )
+  `;
+  db.exec(createEventsTableQuery);
+
   const createEventVenuesTableQuery = `
     CREATE TABLE IF NOT EXISTS event_venues (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -277,6 +316,17 @@ export function initDb(db: Database.Database) {
     )
   `;
   db.exec(createEventVenuesTableQuery);
+
+  const createVenuesTableQuery = `
+    CREATE TABLE IF NOT EXISTS venues (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      region_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (region_id) REFERENCES regions (id)
+    )
+  `;
+  db.exec(createVenuesTableQuery);
 
   const createUsersTableQuery = `
     CREATE TABLE IF NOT EXISTS users (
@@ -292,16 +342,8 @@ export function initDb(db: Database.Database) {
   `;
   db.exec(createUsersTableQuery);
 
-    const createEventsTableQuery = `
-    CREATE TABLE IF NOT EXISTS events (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      region_id INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (region_id) REFERENCES regions (id)
-    )
-  `;
-  db.exec(createEventsTableQuery);
+  // events table moved up
+
 
   const createLocationsTableQuery = `
     CREATE TABLE IF NOT EXISTS locations (
@@ -328,15 +370,16 @@ export function initDb(db: Database.Database) {
   db.exec(createTripStatusesTableQuery);
 
   // Seed default core statuses if table is empty
-  const statusCount = db.prepare('SELECT COUNT(*) as count FROM trip_statuses').get() as { count: number };
-  if (statusCount.count === 0) {
-    const insertStatus = db.prepare('INSERT INTO trip_statuses (name, passenger_count_required, sort_order) VALUES (?, ?, ?)');
+  try {
+    const insertStatus = db.prepare('INSERT OR IGNORE INTO trip_statuses (name, passenger_count_required, sort_order) VALUES (?, ?, ?)');
     insertStatus.run('Scheduled', 0, 1);
     insertStatus.run('Active', 0, 2);
     insertStatus.run('Arriving', 0, 3);
     insertStatus.run('Completed', 1, 4); // Suggest completed needs passenger count
     insertStatus.run('Breakdown', 0, 5);
     insertStatus.run('Cancelled', 0, 6);
+  } catch (err) {
+    console.error('Error seeding trip_statuses:', err);
   }
 
   const createTripSubStatusesTableQuery = `
@@ -350,11 +393,8 @@ export function initDb(db: Database.Database) {
   db.exec(createTripSubStatusesTableQuery);
 
   // Seed default trip sub-statuses if empty
-  const countStmt = db.prepare('SELECT COUNT(*) as count FROM trip_sub_statuses');
-  const result = countStmt.get() as { count: number };
-
-  if (result.count === 0) {
-    const insertStmt = db.prepare('INSERT INTO trip_sub_statuses (name, linked_status, sort_order) VALUES (?, ?, ?)');
+  try {
+    const insertStmt = db.prepare('INSERT OR IGNORE INTO trip_sub_statuses (name, linked_status, sort_order) VALUES (?, ?, ?)');
     insertStmt.run('Scheduled', 'Planned', 10);
     insertStmt.run('Ready for onboarding', 'Planned', 20);
     insertStmt.run('Enroute', 'Active', 30);
@@ -365,6 +405,8 @@ export function initDb(db: Database.Database) {
     insertStmt.run('Arrived', 'Completed', 60);
     insertStmt.run('Parked', 'Completed', 70);
     console.log('Seeded default trip sub-statuses.');
+  } catch (err) {
+    console.error('Error seeding trip_sub_statuses:', err);
   }
 
   
@@ -402,28 +444,55 @@ export function initDb(db: Database.Database) {
   }
   
   // Seed initial roles if empty
-  const roleCount = db.prepare('SELECT COUNT(*) as count FROM roles').get() as { count: number };
-  if (roleCount.count === 0) {
-    const insertRole = db.prepare('INSERT INTO roles (name, description, is_system_role) VALUES (?, ?, ?)');
+  try {
+    const insertRole = db.prepare('INSERT OR IGNORE INTO roles (name, description, is_system_role) VALUES (?, ?, ?)');
     insertRole.run('Super Admin', 'Full access to everything', 1);
     insertRole.run('Region Admin', 'Full access to regional data', 1);
     insertRole.run('Dispatcher', 'Can manage trips and vehicles', 0);
     insertRole.run('Bus Incharge', 'Can view trips and update active status', 0);
     insertRole.run('Volunteer', 'Base access', 0);
     console.log('Seeded default roles.');
+  } catch (err) {
+    console.error('Error seeding roles:', err);
   }
 
   // Seed default superadmin if users table is empty
-  const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-  if (userCount.count === 0) {
+  try {
     const superAdminRole = db.prepare('SELECT id FROM roles WHERE name = ?').get('Super Admin') as { id: number } | undefined;
     if (superAdminRole) {
       // Default password: admin123
       const hashedPassword = bcrypt.hashSync('admin123', 10);
-      const insertUser = db.prepare('INSERT INTO users (name, email, password_hash, role, role_id) VALUES (?, ?, ?, ?, ?)');
+      const insertUser = db.prepare(`
+          INSERT INTO users (name, email, password_hash, role, role_id) 
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(email) DO NOTHING
+        `);
       insertUser.run('Super Admin', 'admin@transport.com', hashedPassword, 'SUPER_ADMIN', superAdminRole.id);
       console.log('Seeded default superadmin user: admin@transport.com / admin123');
     }
+  } catch (err) {
+    console.error('Error seeding superadmin:', err);
+  }
+
+  // --- PERFORMANCE INDEXES ---
+  const indexQueries = [
+    'CREATE INDEX IF NOT EXISTS idx_trips_start_time ON trips(start_time)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_vehicle_id ON trips(vehicle_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_driver_id ON trips(driver_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_volunteer_id ON trips(volunteer_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_origin_id ON trips(origin_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_destination_id ON trips(destination_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_origin_venue_id ON trips(origin_venue_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_destination_venue_id ON trips(destination_venue_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_region_id ON trips(region_id)',
+    'CREATE INDEX IF NOT EXISTS idx_trips_status ON trips(status)',
+    'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
+    'CREATE INDEX IF NOT EXISTS idx_profiles_email ON profiles(email)',
+    'CREATE INDEX IF NOT EXISTS idx_vehicles_registration ON vehicles(registration)'
+  ];
+
+  for (const query of indexQueries) {
+    db.exec(query);
   }
 
   console.log('Database and profiles/vehicles/trips/statuses tables initialized.');

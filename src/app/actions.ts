@@ -282,10 +282,7 @@ export async function createTrip(formData: FormData) {
   const wheelchairs_boarded = parseInt(formData.get('wheelchairs_boarded') as string) || 0;
   const breakdown_issue = formData.get('breakdown_issue') as string || null;
 
-  const stmt = getDb().prepare(`
-    INSERT INTO trips (route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded, origin, destination)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', '')
-  `);
+  const stmt = getDb().prepare('INSERT INTO trips (route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
 
   const result = stmt.run(route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded);
   const newTripId = result.lastInsertRowid;
@@ -346,11 +343,7 @@ export async function updateTrip(id: number, formData: FormData) {
   const destination_venue_id = formData.get('destination_venue_id') ? Number(formData.get('destination_venue_id')) : null;
   const region_id = formData.get('region_id') ? Number(formData.get('region_id')) : null;
 
-  const stmt = getDb().prepare(`
-    UPDATE trips
-    SET route_code = ?, origin_id = ?, destination_id = ?, origin_venue_id = ?, destination_venue_id = ?, region_id = ?, start_time = ?, end_time = ?, vehicle_id = ?, volunteer_id = ?, driver_id = ?, status = ?, sub_status = ?, breakdown_issue = ?, passengers_boarded = ?, wheelchairs_boarded = ?, origin = '', destination = ''
-    WHERE id = ?
-  `);
+  const stmt = getDb().prepare('UPDATE trips SET route_code = ?, origin_id = ?, destination_id = ?, origin_venue_id = ?, destination_venue_id = ?, region_id = ?, start_time = ?, end_time = ?, vehicle_id = ?, volunteer_id = ?, driver_id = ?, status = ?, sub_status = ?, breakdown_issue = ?, passengers_boarded = ?, wheelchairs_boarded = ? WHERE id = ?');
 
   stmt.run(route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded, id);
 
@@ -459,20 +452,23 @@ export async function getTrips(search?: string, region_id?: number | null, limit
 }
 
 export async function getTripsCount(search?: string, region_id?: number | null, dashboardMode?: boolean): Promise<number> {
-  let baseQuery = `
-    SELECT COUNT(*) as count
-    FROM trips 
-    LEFT JOIN profiles v ON trips.volunteer_id = v.id 
-    LEFT JOIN profiles d ON trips.driver_id = d.id 
-    LEFT JOIN vehicles ON trips.vehicle_id = vehicles.id
-    LEFT JOIN locations loc_o ON trips.origin_id = loc_o.id
-    LEFT JOIN locations loc_d ON trips.destination_id = loc_d.id
-    LEFT JOIN venues ven_o ON trips.origin_venue_id = ven_o.id OR loc_o.venue_id = ven_o.id
-    LEFT JOIN venues ven_d ON trips.destination_venue_id = ven_d.id OR loc_d.venue_id = ven_d.id
-  `;
+  let baseQuery = 'SELECT COUNT(*) as count FROM trips';
 
   let conditions: string[] = [];
   let params: any[] = [];
+
+  // Only join other tables if we are searching, because search requires checking names
+  if (search) {
+    baseQuery += `
+      LEFT JOIN profiles v ON trips.volunteer_id = v.id 
+      LEFT JOIN profiles d ON trips.driver_id = d.id 
+      LEFT JOIN vehicles ON trips.vehicle_id = vehicles.id
+      LEFT JOIN locations loc_o ON trips.origin_id = loc_o.id
+      LEFT JOIN locations loc_d ON trips.destination_id = loc_d.id
+      LEFT JOIN venues ven_o ON trips.origin_venue_id = ven_o.id OR loc_o.venue_id = ven_o.id
+      LEFT JOIN venues ven_d ON trips.destination_venue_id = ven_d.id OR loc_d.venue_id = ven_d.id
+    `;
+  }
 
   if (region_id) {
     conditions.push('trips.region_id = ?');
@@ -598,11 +594,12 @@ export async function createTripSubStatus(formData: FormData) {
 
   try {
     stmt.run(name, linked_status, sort_order);
+    return { success: true };
   } catch (err: any) {
     if (err.message.includes('UNIQUE constraint failed')) {
-      throw new Error('Sub-status name already exists');
+      return { success: false, error: 'Sub-status name already exists' };
     }
-    throw err;
+    return { success: false, error: err.message };
   }
 
   revalidatePath('/settings/statuses');
