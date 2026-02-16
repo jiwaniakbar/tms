@@ -116,6 +116,7 @@ export interface Trip {
   breakdown_issue?: string;
   passengers_boarded: number;
   wheelchairs_boarded: number;
+  notes?: string;
   created_at: string;
 }
 
@@ -270,6 +271,13 @@ export function initDb(db: Database.Database) {
     // Column likely already exists
   }
 
+  try {
+    db.exec('ALTER TABLE trips ADD COLUMN notes TEXT');
+    console.log('Added notes column to trips table.');
+  } catch (err) {
+    // Column likely already exists
+  }
+
   const createTripStatusHistoryTableQuery = `
     CREATE TABLE IF NOT EXISTS trip_status_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -395,15 +403,28 @@ export function initDb(db: Database.Database) {
   // Seed default trip sub-statuses if empty
   try {
     const insertStmt = db.prepare('INSERT OR IGNORE INTO trip_sub_statuses (name, linked_status, sort_order) VALUES (?, ?, ?)');
+  // Scheduled
     insertStmt.run('Scheduled', 'Planned', 10);
     insertStmt.run('Ready for onboarding', 'Planned', 20);
+
+    // Active
     insertStmt.run('Enroute', 'Active', 30);
     insertStmt.run('At pit stop', 'Active', 40);
-    insertStmt.run('Within 1 km of destination', 'Active', 50);
-    insertStmt.run('Perimeter - 1 km', 'Active', 55);
-    insertStmt.run('Arriving', 'Active', 60);
+
+    // Arriving (new core status usage or sub-status?)
+    // User requested: "Active - Enroute, At Pit Stop", "Arriving - Perimeter - 1 km, Perimeter - 2 km"
+    // Assuming 'Arriving' is the CORE status for these perimeters based on screenshots?
+    // Wait, earlier 'Arriving' was a core status (id=3).
+    // Let's check `trip_statuses` seeding: 
+    // insertStatus.run('Arriving', 0, 3);
+
+    insertStmt.run('Perimeter - 1 km', 'Arriving', 50);
+    insertStmt.run('Perimeter - 2 km', 'Arriving', 55);
+
+    // Completed
     insertStmt.run('Arrived', 'Completed', 60);
     insertStmt.run('Parked', 'Completed', 70);
+
     console.log('Seeded default trip sub-statuses.');
   } catch (err) {
     console.error('Error seeding trip_sub_statuses:', err);

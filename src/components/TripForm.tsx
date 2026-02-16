@@ -350,25 +350,59 @@ isReadOnly?: boolean
         <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', color: '#475569', borderBottom: '2px solid #e2e8f0', paddingBottom: '8px' }}>📡 Trip Progress</h3>
         
           <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          
-            <div className="input-group" style={{ flex: '1 1 300px', marginBottom: 0 }}>
-              {/* Label removed as per request for leaner UI, context is clear from header */}
-            <select
-              className="input-field"
-              id="sub_status"
-              name="sub_status"
-              required
-              value={currentSubStatus}
-              onChange={(e) => setCurrentSubStatus(e.target.value)}
+
+            {/* Status Selection Refactor */}
+            <div className="input-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+              <label className="input-label" htmlFor="status" style={{ color: '#0f172a' }}>Status</label>
+              <select
+                className="input-field"
+                id="status"
+                name="status"
+                required
+                value={currentStatus}
+                onChange={(e) => {
+                  const newStatus = e.target.value;
+                  setCurrentStatus(newStatus);
+                  // Auto-select first sub-status if available, or just use the status itself
+                  const availableSubs = subStatuses.filter(s => s.linked_status === newStatus).sort((a, b) => a.sort_order - b.sort_order);
+                  if (availableSubs.length > 0) {
+                    setCurrentSubStatus(availableSubs[0].name);
+                  } else {
+                    // For statuses like Breakdown/Cancelled that might not have sub-statuses
+                    // We can reuse the status name as sub-status or keep it empty/default
+                    // Legacy logic used 'Scheduled' as fallback, but let's try to be smarter
+                    setCurrentSubStatus(newStatus);
+                  }
+                }}
                 style={{ fontWeight: 600, color: '#3b82f6', backgroundColor: '#ffffff', height: '48px' }}
-            >
-              {subStatuses.map(s => (
-                <option key={s.id} value={s.name}>{s.name} {s.linked_status ? `(${s.linked_status})` : ''}</option>
-              ))}
-              {subStatuses.length === 0 && <option value="Scheduled">Scheduled (Default)</option>}
-            </select>
-            <input type="hidden" name="status" value={currentStatus} />
-          </div>
+              >
+                {statuses.sort((a: any, b: any) => a.sort_order - b.sort_order).map((s: any) => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sub-Status logic: Only show if there are sub-statuses for this core status OR if we want to allow free-text? No, strict for now. */}
+            <div className="input-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+              <label className="input-label" htmlFor="sub_status" style={{ color: '#0f172a' }}>Sub-Status / Detail</label>
+              <select
+                className="input-field"
+                id="sub_status"
+                name="sub_status"
+                required
+                value={currentSubStatus}
+                onChange={(e) => setCurrentSubStatus(e.target.value)}
+                style={{ fontWeight: 500, color: '#475569', backgroundColor: '#ffffff', height: '48px' }}
+              >
+                {subStatuses.filter(s => s.linked_status === currentStatus).sort((a, b) => a.sort_order - b.sort_order).map(s => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+                {/* Fallback option if no sub-statuses exist for this core status */}
+                {subStatuses.filter(s => s.linked_status === currentStatus).length === 0 && (
+                  <option value={currentStatus}>{currentStatus}</option>
+                )}
+              </select>
+            </div>
 
             <div style={{ display: 'flex', gap: '12px', flex: '0 1 auto', flexWrap: 'nowrap' }}>
               <div className="input-group" style={{ marginBottom: 0 }}>
@@ -499,6 +533,18 @@ isReadOnly?: boolean
               />
             </div>
           </div>
+          </div>
+          <div className="input-group" style={{ marginBottom: 0, marginTop: '16px' }}>
+            <label className="input-label" htmlFor="notes">📝 Trip Notes / Remarks</label>
+            <textarea
+              className="input-field"
+              id="notes"
+              name="notes"
+              rows={3}
+              defaultValue={trip?.notes || ''}
+              placeholder="Add any extra details, passenger requirements, or instructions..."
+              style={{ minHeight: '80px', resize: 'vertical' }}
+            />
         </div>
       </div>
 

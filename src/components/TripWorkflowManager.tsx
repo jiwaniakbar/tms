@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { TripStatus } from '@/components/TripForm';
 import { TripSubStatus } from '@/lib/db';
 import { updateTripStatus, deleteTripStatus, createTripStatus, updateTripSubStatus, deleteTripSubStatus, createTripSubStatus } from '@/app/actions';
 
 function SubStatusRow({ sub, core }: { sub: TripSubStatus, core: TripStatus }) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -14,8 +16,12 @@ function SubStatusRow({ sub, core }: { sub: TripSubStatus, core: TripStatus }) {
     formData.append('linked_status', core.name); // lock it to this core
     const res = await updateTripSubStatus(sub.id, formData);
     setSaving(false);
-    if (res?.error) alert(res.error);
-    else setIsEditing(false);
+    if (res?.error) {
+      alert(res.error);
+    } else {
+      setIsEditing(false);
+      router.refresh();
+    }
   }
 
   if (isEditing) {
@@ -38,7 +44,10 @@ function SubStatusRow({ sub, core }: { sub: TripSubStatus, core: TripStatus }) {
       <div style={{ display: 'flex', gap: '8px' }}>
         <button onClick={() => setIsEditing(true)} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.85rem' }}>Edit</button>
         <form action={async () => {
-          if (confirm('Delete this sub-status?')) await deleteTripSubStatus(sub.id);
+          if (confirm('Delete this sub-status?')) {
+            await deleteTripSubStatus(sub.id);
+            router.refresh();
+          }
         }}>
           <button type="submit" style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.85rem' }}>Delete</button>
         </form>
@@ -48,6 +57,7 @@ function SubStatusRow({ sub, core }: { sub: TripSubStatus, core: TripStatus }) {
 }
 
 function CoreStatusBlock({ core, subStatuses }: { core: TripStatus, subStatuses: TripSubStatus[] }) {
+  const router = useRouter();
   const [isEditingCore, setIsEditingCore] = useState(false);
   const [savingCore, setSavingCore] = useState(false);
   const [isAddingSub, setIsAddingSub] = useState(false);
@@ -58,8 +68,12 @@ function CoreStatusBlock({ core, subStatuses }: { core: TripStatus, subStatuses:
     setSavingCore(true);
     const res = await updateTripStatus(core.id, formData);
     setSavingCore(false);
-    if (res?.error) alert(res.error);
-    else setIsEditingCore(false);
+    if (res?.error) {
+      alert(res.error);
+    } else {
+      setIsEditingCore(false);
+      router.refresh();
+    }
   }
 
   return (
@@ -95,7 +109,10 @@ function CoreStatusBlock({ core, subStatuses }: { core: TripStatus, subStatuses:
             <div style={{ display: 'flex', gap: '12px' }}>
               <button onClick={() => setIsEditingCore(true)} style={{ background: 'none', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>Edit Core</button>
               <form action={async () => {
-                if (confirm('Delete this Core Status? This will detach its sub-statuses.')) await deleteTripStatus(core.id);
+                  if (confirm('Delete this Core Status? This will detach its sub-statuses.')) {
+                    await deleteTripStatus(core.id);
+                    router.refresh();
+                  }
               }}>
                 <button type="submit" style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#ef4444', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 500 }}>Delete</button>
               </form>
@@ -121,6 +138,7 @@ function CoreStatusBlock({ core, subStatuses }: { core: TripStatus, subStatuses:
                 alert(res.error);
               } else {
                 setIsAddingSub(false);
+                router.refresh();
               }
             }} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
               <input type="text" name="name" placeholder="New sub-status name" required style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }} />
@@ -142,6 +160,7 @@ function CoreStatusBlock({ core, subStatuses }: { core: TripStatus, subStatuses:
 }
 
 export default function TripWorkflowManager({ coreStatuses, subStatuses }: { coreStatuses: TripStatus[], subStatuses: TripSubStatus[] }) {
+  const router = useRouter();
   const [isAddingCore, setIsAddingCore] = useState(false);
 
   return (
@@ -157,6 +176,7 @@ export default function TripWorkflowManager({ coreStatuses, subStatuses }: { cor
           <form action={async (formData) => {
             await createTripStatus(formData);
             setIsAddingCore(false);
+            router.refresh();
           }} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', gap: '12px' }}>
               <div style={{ flex: 1 }}>
@@ -194,7 +214,10 @@ export default function TripWorkflowManager({ coreStatuses, subStatuses }: { cor
             {subStatuses.filter(s => !coreStatuses.some(c => c.name === s.linked_status)).map(sub => (
               <div key={sub.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                 <span>{sub.name} (Linked to: {sub.linked_status})</span>
-                <form action={async () => await deleteTripSubStatus(sub.id)}>
+                <form action={async () => {
+                  await deleteTripSubStatus(sub.id);
+                  router.refresh();
+                }}>
                   <button type="submit" style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer' }}>Delete</button>
                 </form>
               </div>

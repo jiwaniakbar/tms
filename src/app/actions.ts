@@ -282,9 +282,11 @@ export async function createTrip(formData: FormData) {
   const wheelchairs_boarded = parseInt(formData.get('wheelchairs_boarded') as string) || 0;
   const breakdown_issue = formData.get('breakdown_issue') as string || null;
 
-  const stmt = getDb().prepare('INSERT INTO trips (route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const notes = formData.get('notes') as string || null;
 
-  const result = stmt.run(route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded);
+  const stmt = getDb().prepare('INSERT INTO trips (route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+
+  const result = stmt.run(route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded, notes);
   const newTripId = result.lastInsertRowid;
 
   // Log initial status to history
@@ -342,10 +344,11 @@ export async function updateTrip(id: number, formData: FormData) {
   const destination_id = formData.get('destination_id') ? Number(formData.get('destination_id')) : null;
   const destination_venue_id = formData.get('destination_venue_id') ? Number(formData.get('destination_venue_id')) : null;
   const region_id = formData.get('region_id') ? Number(formData.get('region_id')) : null;
+  const notes = formData.get('notes') as string || null;
 
-  const stmt = getDb().prepare('UPDATE trips SET route_code = ?, origin_id = ?, destination_id = ?, origin_venue_id = ?, destination_venue_id = ?, region_id = ?, start_time = ?, end_time = ?, vehicle_id = ?, volunteer_id = ?, driver_id = ?, status = ?, sub_status = ?, breakdown_issue = ?, passengers_boarded = ?, wheelchairs_boarded = ? WHERE id = ?');
+  const stmt = getDb().prepare('UPDATE trips SET route_code = ?, origin_id = ?, destination_id = ?, origin_venue_id = ?, destination_venue_id = ?, region_id = ?, start_time = ?, end_time = ?, vehicle_id = ?, volunteer_id = ?, driver_id = ?, status = ?, sub_status = ?, breakdown_issue = ?, passengers_boarded = ?, wheelchairs_boarded = ?, notes = ? WHERE id = ?');
 
-  stmt.run(route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded, id);
+  stmt.run(route_code, origin_id, destination_id, origin_venue_id, destination_venue_id, region_id, start_time, end_time, vehicle_id, volunteer_id, driver_id, status, sub_status, breakdown_issue, passengers_boarded, wheelchairs_boarded, notes, id);
 
   // If status, sub_status, or breakdown_issue changed, log to history
   if (
